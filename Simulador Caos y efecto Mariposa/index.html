@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Caos y Efecto Mariposa: Sistema de Lorenz</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <header class="hero">
+    <div class="container hero-flex">
+      <div>
+        <span class="pill-tag">🦋 Laboratorio Interactivo de Física y Matemáticas</span>
+        <h1>Caos y Efecto Mariposa: Sistema de Lorenz</h1>
+        <p>Descubre cómo un cambio microscópico transforma por completo el futuro de un sistema.</p>
+      </div>
+      <div class="objective-box">
+        <strong>🎯 Objetivo del Simulador:</strong>
+        <span>Experimentar con dos trayectorias casi idénticas para visualizar cómo una mínima diferencia inicial provoca comportamientos totalmente distintos con el paso del tiempo.</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- CONEXIÓN CON LA VIDA COTIDIANA + MODELO -->
+    <section class="cards-3">
+      <article class="card glow-blue">
+        <div class="icon-title">🌦️ ¿Por qué falla el pronóstico del clima?</div>
+        <p>
+          La app del clima acierta mañana, pero falla a 15 días. Como es imposible medir la temperatura y el viento en cada centímetro de la Tierra, un error diminuto crece rápido. <strong>Edward Lorenz (1961)</strong> lo descubrió al redondear un número de <code>0.506127</code> a <code>0.506</code>.
+        </p>
+      </article>
+
+      <article class="card glow-purple">
+        <div class="icon-title">🚗 El Efecto Mariposa en tu día a día</div>
+        <p>
+          Salir <strong>10 segundos tarde</strong> de casa puede hacer que pierdas un semáforo en verde, quedes atrapado en un embotellamiento y cambie toda tu mañana. En la naturaleza ocurre igual: <em>el aleteo de una mariposa en Brasil</em> simboliza una variación mínima que altera el estado futuro del aire.
+        </p>
+      </article>
+
+      <article class="card glow-cyan">
+        <div class="icon-title">📐 Las 3 Ecuaciones de Lorenz (RK4)</div>
+        <div class="eq-mini">
+          <div><b>dx/dt</b> = &sigma;(y &minus; x) &nbsp;<small>(giro del aire)</small></div>
+          <div><b>dy/dt</b> = x(&rho; &minus; z) &minus; y &nbsp;<small>(dif. térmica)</small></div>
+          <div><b>dz/dt</b> = xy &minus; &beta;z &nbsp;<small>(perfil vertical)</small></div>
+        </div>
+      </article>
+    </section>
+
+    <!-- GUÍA RÁPIDA EN 3 PASOS -->
+    <section class="steps-bar">
+      <div class="step-pill"><span>1</span> Ajusta <b>&Delta;</b> (diferencia inicial)</div>
+      <div class="step-pill"><span>2</span> Pulsa <b>▶ INICIAR</b> y gira el 3D con el ratón</div>
+      <div class="step-pill"><span>3</span> Observa cuándo se separan las alas 🔵 y 🔴</div>
+    </section>
+
+    <!-- LABORATORIO INTERACTIVO -->
+    <section class="lab-grid">
+      <!-- PANEL DE CONTROLES -->
+      <aside class="card config-panel">
+        <h2>🎛️ Controles del Experimento</h2>
+
+        <div class="ctrl">
+          <label>Posición X₀ <span id="val-x0">1.00</span></label>
+          <input type="range" id="slider-x0" min="-20" max="20" step="0.1" value="1" />
+          <input type="number" id="input-x0" step="0.1" value="1" />
+        </div>
+
+        <div class="ctrl">
+          <label>Posición Y₀ <span id="val-y0">1.00</span></label>
+          <input type="range" id="slider-y0" min="-20" max="20" step="0.1" value="1" />
+          <input type="number" id="input-y0" step="0.1" value="1" />
+        </div>
+
+        <div class="ctrl">
+          <label>Posición Z₀ <span id="val-z0">1.00</span></label>
+          <input type="range" id="slider-z0" min="0" max="40" step="0.1" value="1" />
+          <input type="number" id="input-z0" step="0.1" value="1" />
+        </div>
+
+        <div class="ctrl ctrl-accent">
+          <label>🦋 Perturbación &Delta; <span id="val-delta">0.0010</span></label>
+          <input type="range" id="slider-delta" min="0.0001" max="1" step="0.0001" value="0.001" />
+          <input type="number" id="input-delta" step="0.0001" value="0.001" />
+          <small class="hint">Diferencia inicial entre Trayectoria A y B</small>
+        </div>
+
+        <div class="ctrl">
+          <label>Sigma (&sigma;) <span id="val-sigma">10.00</span></label>
+          <input type="range" id="slider-sigma" min="1" max="30" step="0.1" value="10" />
+          <input type="number" id="input-sigma" step="0.1" value="10" />
+        </div>
+
+        <div class="ctrl">
+          <label>Rho (&rho;) <span id="val-rho">28.00</span></label>
+          <input type="range" id="slider-rho" min="0" max="60" step="0.5" value="28" />
+          <input type="number" id="input-rho" step="0.1" value="28" />
+        </div>
+
+        <div class="ctrl">
+          <label>Beta (&beta;) <span id="val-beta">2.67</span></label>
+          <input type="range" id="slider-beta" min="0.5" max="10" step="0.01" value="2.67" />
+          <input type="number" id="input-beta" step="0.01" value="2.67" />
+        </div>
+
+        <div class="ctrl">
+          <label>Paso (&Delta;t) <span id="val-dt">0.010</span></label>
+          <input type="range" id="slider-dt" min="0.001" max="0.025" step="0.001" value="0.01" />
+          <input type="number" id="input-dt" step="0.001" value="0.01" />
+        </div>
+      </aside>
+
+      <!-- VISUALIZACIÓN 3D, INDICADORES Y GRÁFICA -->
+      <div class="vis-column">
+        <div class="card toolbar">
+          <div class="btns">
+            <button id="btn-start" class="btn btn-primary">▶ INICIAR</button>
+            <button id="btn-pause" class="btn btn-warning" disabled>⏸ PAUSAR</button>
+            <button id="btn-reset" class="btn btn-danger">↺ REINICIAR</button>
+            <button id="btn-reset-view" class="btn btn-secondary">🎥 REINICIAR VISTA</button>
+            <button id="btn-slow-motion" class="btn btn-outline">🐢 CÁMARA LENTA</button>
+          </div>
+          <div class="legend">
+            <span><i class="dot blue"></i> Trayectoria A (Original)</span>
+            <span><i class="dot red"></i> Trayectoria B (+&Delta;)</span>
+          </div>
+        </div>
+
+        <!-- ESCENA 3D -->
+        <div class="card">
+          <div class="box-header">
+            <span>🦋 Atractor de Lorenz 3D (Arrastra para rotar | Rueda para zoom)</span>
+          </div>
+          <div id="three-container" class="three-box"></div>
+        </div>
+
+        <!-- INDICADORES EN VIVO -->
+        <div class="card kpi-row">
+          <div class="kpi">
+            <span>⏱️ Tiempo Simulado</span>
+            <strong id="ind-time">00:00:00.000</strong>
+          </div>
+          <div class="kpi">
+            <span>📏 Separación (&Delta;d)</span>
+            <strong id="ind-distance">0.001000</strong>
+          </div>
+          <div class="kpi">
+            <span>🚦 Estado del Sistema</span>
+            <strong id="ind-state" class="badge green">Viajan Juntas</strong>
+          </div>
+          <div class="kpi">
+            <span>⚙️ Configuración Activa</span>
+            <small id="ind-summary">A(1,1,1) | &sigma;=10, &rho;=28, &beta;=2.67</small>
+          </div>
+        </div>
+
+        <!-- GRÁFICA LOGARÍTMICA -->
+        <div class="card chart-box">
+          <canvas id="divergence-chart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- BITÁCORA Y EXPORTACIÓN -->
+    <section class="card">
+      <h2>📓 Bitácora Experimental y Exportación</h2>
+      <form id="experiment-form" class="form-grid" novalidate>
+        <div>
+          <input type="text" id="student-id" placeholder="Código o ID estudiante *" required />
+          <input type="text" id="student-name" placeholder="Nombre (opcional)" />
+          <input type="text" id="student-course" placeholder="Curso (opcional)" />
+          <input type="text" id="student-group" placeholder="Grupo *" required />
+        </div>
+        <div>
+          <textarea id="exp-hypothesis" rows="2" placeholder="Hipótesis: ¿Qué pasará con la distancia tras 15 segundos?"></textarea>
+          <textarea id="exp-observations" rows="2" placeholder="Observaciones: ¿En qué segundo se separaron las trayectorias?"></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">💾 Guardar Ensayo</button>
+          <button type="button" id="btn-export-xlsx" class="btn btn-success">📊 Descargar Excel (.xlsx)</button>
+          <button type="button" id="btn-export-csv" class="btn btn-secondary">📄 Descargar CSV (.csv)</button>
+        </div>
+      </form>
+      <div id="form-feedback" class="feedback hidden"></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Fecha</th>
+              <th>ID</th>
+              <th>Grupo</th>
+              <th>(X₀,Y₀,Z₀)</th>
+              <th>&Delta;</th>
+              <th>(&sigma;,&rho;,&beta;)</th>
+              <th>Tiempo</th>
+              <th>Distancia</th>
+              <th>Estado</th>
+              <th>Eliminar</th>
+            </tr>
+          </thead>
+          <tbody id="experiments-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- RETO DE COMPRENSIÓN -->
+    <section class="card">
+      <h2>🧠 Reto Rápido de Comprensión</h2>
+      <div class="quiz">
+        <div>
+          <p><strong>1. ¿Qué representa el efecto mariposa?</strong></p>
+          <label><input type="radio" name="q1" value="a" /> Tormentas causadas por insectos.</label>
+          <label><input type="radio" name="q1" value="b" /> Sensibilidad extrema a pequeñas variaciones iniciales.</label>
+          <label><input type="radio" name="q1" value="c" /> Un sistema que nunca cambia.</label>
+          <label><input type="radio" name="q1" value="d" /> Azar puro sin leyes físicas.</label>
+        </div>
+        <div>
+          <p><strong>2. ¿Quién formuló este sistema?</strong></p>
+          <label><input type="radio" name="q2" value="a" /> Isaac Newton</label>
+          <label><input type="radio" name="q2" value="b" /> Edward Norton Lorenz</label>
+          <label><input type="radio" name="q2" value="c" /> Albert Einstein</label>
+          <label><input type="radio" name="q2" value="d" /> Nikola Tesla</label>
+        </div>
+        <div>
+          <p><strong>3. ¿Qué representan X, Y y Z?</strong></p>
+          <label><input type="radio" name="q3" value="a" /> Latitud, longitud y altura.</label>
+          <label><input type="radio" name="q3" value="b" /> Convección (X), dif. térmica horizontal (Y) y distorsión vertical (Z).</label>
+          <label><input type="radio" name="q3" value="c" /> Presión, humedad y nubosidad.</label>
+          <label><input type="radio" name="q3" value="d" /> Masa, fuerza y aceleración.</label>
+        </div>
+        <div>
+          <p><strong>4. ¿Qué ocurre con dos trayectorias casi iguales?</strong></p>
+          <label><input type="radio" name="q4" value="a" /> Siempre van paralelas.</label>
+          <label><input type="radio" name="q4" value="b" /> Se separan exponencialmente tras unos segundos.</label>
+          <label><input type="radio" name="q4" value="c" /> Se detienen en cero.</label>
+          <label><input type="radio" name="q4" value="d" /> Desaparecen de la gráfica.</label>
+        </div>
+        <div>
+          <p><strong>5. ¿Qué significa ser determinista y caótico?</strong></p>
+          <label><input type="radio" name="q5" value="a" /> Usa dados o azar.</label>
+          <label><input type="radio" name="q5" value="b" /> Sigue ecuaciones exactas, pero es impredecible a largo plazo.</label>
+          <label><input type="radio" name="q5" value="c" /> No tiene ecuaciones.</label>
+          <label><input type="radio" name="q5" value="d" /> Es predecible a 100 años.</label>
+        </div>
+      </div>
+      <div class="quiz-bar">
+        <button id="btn-grade-quiz" class="btn btn-primary">Comprobar Respuestas</button>
+        <span id="quiz-score"></span>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
